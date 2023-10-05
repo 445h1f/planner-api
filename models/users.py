@@ -1,30 +1,17 @@
 from pydantic import BaseModel, EmailStr
+from beanie import Document, Link
 from typing import List, Optional
-from .events import Event
-
-
-# # user sign up mode
-# class UserSignUp(BaseModel):
-#     email : EmailStr
-#     password : str
-
-
-#     class Config:
-#         json_schema_extra = {
-#             "examples" : {
-#                 "email" : "test@email.com",
-#                 "password" : "YouOweMe!!!"
-#             }
-#         }
-
 
 
 # user model
-class User(BaseModel):
+class User(Document):
     email : EmailStr
     password : str
-    # events : Optional[List[Event]]
+    # events : Optional[List[Link[Event]]]
 
+
+    class Settings:
+        name = 'users'
 
     # sample schema for doc
     class Config:

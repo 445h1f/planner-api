@@ -1,28 +1,29 @@
 from fastapi import APIRouter, HTTPException, status
 from models.users import User, UserSignIn
+from beanie import PydanticObjectId
+from database.connection import Database
 
 # user api router
 user_router = APIRouter(tags=["User"])
+# user database
+user_database = Database(User)
 
-
-# dict to store users
-users = {}
 
 
 # user signup route
 @user_router.post('/signup')
-async def sign_up_user(data:User):
-    print(data.model_dump())
+async def sign_up_user(user_data:User) -> dict:
+    # first check if user with email exists or not
+    user_exists = await User.find_one(User.email == user_data.email)
 
-    #if email is already registered
-    if data.email in users:
+    if user_exists:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="user already exists with email"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="email already registered."
         )
 
-    # else add user in dict
-    users[data.email] = data
+
+    await user_database.save(user_data)
 
     return {
         "message" : "signup successful."
@@ -31,9 +32,11 @@ async def sign_up_user(data:User):
 
 # user sign in route
 @user_router.post('/signin')
-async def sign_in_user(data:UserSignIn):
-    # returning unauthorized response if email does not exists or password not matches
-    if data.email not in users or users[data.email].password != data.password:
+async def sign_in_user(user_data:UserSignIn):
+    # check for email
+    user_exist = await User.find_one(User.email == user_data.email)
+
+    if not user_exist or user_exist.password != user_data.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid login credentials"
